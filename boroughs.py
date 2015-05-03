@@ -45,12 +45,12 @@ def get_score_summary(filename):
 
     mydata2 = {}
 
-    for item in mydata1.itervalues():
-        if item[1] not in mydata2:
-            mydata2[item[1]] = [1, GRADES[item[0]]]
-        else:
+    for item in mydata1.values():
+        try:
             mydata2[item[1]][0] += 1
             mydata2[item[1]][1] += GRADES[item[0]]
+        except KeyError:
+            mydata2[item[1]] = [1, GRADES[item[0]]]
 
     mydata3 = {}
 
@@ -82,13 +82,14 @@ def get_market_density(filename):
     fhandler.close()
 
     for item in jsondata:
-        item[8] = item[8].strip()
-        if item[8] not in result.iterkeys():
-            value = 1
-        else:
-            value = result[item[8]] + 1
-        result[item[8]] = value
-        result.update(result)
+        boro = item[8].strip()
+
+        try:
+            result[boro] += 1
+
+        except KeyError:
+            result[boro] = 1
+
     return result
 
 
@@ -110,13 +111,13 @@ def correlate_data(firstarg='inspection_results.csv',
     score = get_score_summary(firstarg)
     market = get_market_density(secondarg)
     result = {}
-    for item2 in market.iterkeys():
-        for item1 in score.iterkeys():
-            if item1 == str(item2).upper():
-                value1 = score[item1][1]
-                value2 = float(market[item2])/(score[item1][0])
-                result[item2] = (value1, value2)
-                result.update(result)
+
+    for key, value in market.iteritems():
+        boro = key.upper()
+
+        if boro in score:
+            result[boro] = score[boro][1], float(value)/float(score[boro][0])
+
     jsondata = json.dumps(result)
 
     fhandler = open(thirdarg, 'w')
